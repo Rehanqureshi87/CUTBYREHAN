@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rehan — Video Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black: #060606;
+    --surface: #0d0d0d;
+    --accent: #FF4A0C;
+    --accent2: #FF7A3D;
+    --accent-dim: rgba(255, 74, 12, 0.18);
+    --accent-glow: rgba(255, 74, 12, 0.35);
+    --white: #FAF7F4;
+    --muted: #9a9a9a;
+    --border: rgba(255,255,255,0.09);
+    --glass-bg: rgba(255, 255, 255, 0.055);
+    --glass-bg-hover: rgba(255, 255, 255, 0.09);
+    --glass-border: rgba(255, 255, 255, 0.13);
+    --glass-shine: rgba(255, 255, 255, 0.08);
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-xl: 36px;
+    --display: 'Bebas Neue', sans-serif;
+    --body: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    /* Ambient background blobs */
+    background-image:
+      radial-gradient(ellipse 700px 550px at 85% 5%, rgba(255,74,12,0.13) 0%, transparent 65%),
+      radial-gradient(ellipse 450px 450px at 5% 70%, rgba(255,74,12,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 300px 300px at 50% 95%, rgba(255,122,61,0.05) 0%, transparent 70%);
+    background-attachment: fixed;
+  }
+
+  /* ── LIQUID GLASS MIXIN ── */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.07) inset,
+      0 -1px 0 0 rgba(0,0,0,0.3) inset,
+      0 8px 32px rgba(0,0,0,0.4),
+      0 0 0 0.5px rgba(255,255,255,0.04);
+    position: relative;
+  }
+
+  /* Glossy top sheen */
+  .glass::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.055) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glass > * { position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 16px; left: 50%; transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px;
+    width: calc(100% - 64px);
+    max-width: 1100px;
+    border-radius: var(--radius-xl);
+    background: rgba(12,12,12,0.7);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 8px 40px rgba(0,0,0,0.5);
+  }
+
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 17px;
+    letter-spacing: 3px;
+    color: var(--white);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--white); }
+
+  .nav-cta {
+    background: linear-gradient(135deg, #FF4A0C, #FF6B35) !important;
+    color: var(--white) !important;
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-weight: 600 !important;
+    letter-spacing: 0.5px !important;
+    transition: opacity 0.2s, transform 0.2s !important;
+    box-shadow: 0 0 24px rgba(255,74,12,0.5);
+  }
+
+  .nav-cta:hover { opacity: 0.9; transform: scale(1.03); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 0 48px;
+    padding-top: 90px;
+    gap: 40px;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px; height: 1px;
+    background: var(--accent);
+    opacity: 0.8;
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(68px, 8.5vw, 126px);
+    line-height: 0.92;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+    color: var(--white);
+  }
+
+  .hero-title span {
+    color: var(--accent);
+    display: block;
+    text-shadow: 0 0 60px rgba(255,74,12,0.4);
+  }
+
+  .hero-sub {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 360px;
+    margin-bottom: 32px;
+    line-height: 1.75;
+    font-weight: 300;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #FF4A0C, #FF6B35);
+    color: var(--white);
+    padding: 13px 28px;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 28px rgba(255,74,12,0.55), 0 4px 16px rgba(0,0,0,0.4);
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 0 44px rgba(255,74,12,0.7); }
+
+  .btn-ghost {
+    color: var(--white);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+    padding: 13px 22px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+    white-space: nowrap;
+  }
+
+  .btn-ghost:hover { color: var(--white); background: rgba(255,255,255,0.11); border-color: rgba(255,255,255,0.28); }
+
+  /* HERO RIGHT — Glass film panels */
+  .hero-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .film-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .film-cell {
+    aspect-ratio: 16/9;
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255,74,12,0.18), rgba(10,4,2,0.75));
+    border: 1px solid rgba(255,74,12,0.2);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 12px 40px rgba(0,0,0,0.6);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .film-cell:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,74,12,0.45); }
+
+  .film-cell.featured {
+    grid-column: span 2;
+    aspect-ratio: 21/9;
+    background: linear-gradient(135deg, rgba(120,30,0,0.7), rgba(30,10,0,0.9));
+    border-color: rgba(255,74,12,0.3);
+  }
+
+  .film-cell.featured::after {
+    content: '▶';
+    position: absolute;
+    font-size: 28px;
+    color: var(--white);
+    opacity: 0.85;
+    z-index: 2;
+    filter: drop-shadow(0 0 16px rgba(255,74,12,0.9));
+  }
+
+  .film-cell::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 38%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.09) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .film-cell-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: rgba(250,247,244,0.8);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 12px;
+  }
+
+  .stat {
+    flex: 1;
+    text-align: center;
+    padding: 16px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset;
+  }
+
+  .stat-number {
+    font-family: var(--display);
+    font-size: 38px;
+    color: var(--white);
+    letter-spacing: 1px;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: var(--mono);
+  }
+
+  /* ── MARQUEE ── */
+  .marquee-wrap {
+    overflow: hidden;
+    padding: 14px 0;
+    margin: 0 48px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    margin-bottom: 16px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 48px;
+    animation: marquee 20s linear infinite;
+    white-space: nowrap;
+  }
+
+  .marquee-item {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .marquee-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ── SECTIONS ── */
+  section { padding: 96px 48px; }
+
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-eyebrow::before {
+    content: '';
+    display: block;
+    width: 18px; height: 1px;
+    background: var(--accent);
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(42px, 5vw, 70px);
+    letter-spacing: 1px;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  /* ── WORK GRID ── */
+  .work-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+  }
+
+  .work-card {
+    border-radius: var(--radius-lg);
+    aspect-ratio: 16/10;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-end;
+    padding: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 40px rgba(0,0,0,0.4);
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    backdrop-filter: blur(8px);
+  }
+
+  .work-card:hover {
+    transform: translateY(-6px) scale(1.01);
+    border-color: rgba(232,68,10,0.4);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,68,10,0.2);
+  }
+
+  /* Gloss sheen on cards */
+  .work-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .work-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);
+    z-index: 0;
+  }
+
+  .work-card:nth-child(1) { background: linear-gradient(135deg, #2a0800, #5a1800); }
+  .work-card:nth-child(2) { background: linear-gradient(135deg, #07071a, #14145a); }
+  .work-card:nth-child(3) { background: linear-gradient(135deg, #140d00, #3a2500); }
+  .work-card:nth-child(4) { background: linear-gradient(135deg, #040d00, #0f2e00); grid-column: span 2; }
+  .work-card:nth-child(5) { background: linear-gradient(135deg, #1a0408, #4a0a18); }
+
+  .work-card-info {
+    position: relative;
+    z-index: 2;
+  }
+
+  .work-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .work-name { font-size: 14px; font-weight: 600; color: var(--white); }
+
+  .work-card-play {
+    position: absolute;
+    top: 16px; right: 16px;
+    width: 38px; height: 38px;
+    background: rgba(232,68,10,0.85);
+    backdrop-filter: blur(12px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: scale(0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 20px rgba(232,68,10,0.5);
+  }
+
+  .work-card:hover .work-card-play { opacity: 1; transform: scale(1); }
+
+  /* ── SERVICES ── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+  }
+
+  .service-item {
+    padding: 36px 28px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.07) inset, 0 12px 40px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+  }
+
+  .service-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .service-item:hover {
+    transform: translateY(-4px);
+    border-color: rgba(232,68,10,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(232,68,10,0.1);
+  }
+
+  .service-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
+
+  .service-name {
+    font-family: var(--display);
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    color: var(--white);
+  }
+
+  .service-desc { font-size: 13px; color: var(--muted); line-height: 1.7; font-weight: 300; }
+
+  /* ── PROCESS ── */
+  .process-row {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-top: 48px;
+  }
+
+  .process-steps {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 40px rgba(0,0,0,0.3);
+  }
+
+  .process-step {
+    padding: 22px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    transition: background 0.2s;
+  }
+
+  .process-step:last-child { border-bottom: none; }
+  .process-step:hover { background: rgba(255,255,255,0.03); }
+
+  .process-step-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    opacity: 0.8;
+  }
+
+  .process-step-name { font-size: 14px; font-weight: 500; color: var(--white); }
+
+  .process-visual {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    aspect-ratio: 16/10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 40px rgba(0,0,0,0.4);
+  }
+
+  .process-visual::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .process-visual::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(232,68,10,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .timeline-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 78%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .timeline-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  .timeline-bar {
+    height: 5px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .timeline-fill {
+    height: 100%;
+    background: linear-gradient(to right, #FF4A0C, #FF8C5A);
+    border-radius: 100px;
+    box-shadow: 0 0 12px rgba(255,74,12,0.7);
+  }
+
+  /* ── TESTIMONIALS ── */
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+  }
+
+  .testimonial {
+    padding: 36px 32px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(150%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.07) inset, 0 12px 40px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .testimonial::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.06) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .testimonial:hover { transform: translateY(-4px); border-color: rgba(232,68,10,0.2); }
+
+  .testimonial-text { font-size: 15px; color: var(--white); line-height: 1.8; margin-bottom: 24px; font-weight: 300; opacity: 0.9; }
+
+  .testimonial-author { display: flex; align-items: center; gap: 12px; }
+
+  .author-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(232,68,10,0.12);
+    border: 1px solid rgba(232,68,10,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: var(--accent);
+    backdrop-filter: blur(8px);
+  }
+
+  .author-name { font-size: 13px; font-weight: 600; color: var(--white); }
+  .author-role { font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: 1px; }
+
+  /* ── CTA ── */
+  .cta-section {
+    text-align: center;
+    padding: 120px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(232,68,10,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Glass CTA card */
+  .cta-card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 56px 48px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(32px) saturate(160%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset, 0 24px 80px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.07) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .cta-title {
+    font-family: var(--display);
+    font-size: clamp(52px, 7vw, 96px);
+    letter-spacing: 2px;
+    line-height: 0.95;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .cta-title span { color: var(--accent); }
+
+  .cta-sub { color: var(--muted); font-size: 15px; margin-bottom: 40px; font-weight: 300; position: relative; }
+
+  /* ── FOOTER ── */
+  footer {
+    margin: 0 48px 32px;
+    padding: 24px 32px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+  }
+
+  .footer-logo { font-family: var(--display); font-size: 17px; letter-spacing: 3px; color: var(--muted); }
+
+  .footer-links { display: flex; gap: 24px; list-style: none; }
+
+  .footer-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--accent); }
+  .footer-copy { font-size: 11px; color: rgba(255,255,255,0.2); font-family: var(--mono); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { width: calc(100% - 32px); top: 10px; padding: 12px 20px; }
+    .nav-links { display: none; }
+    .hero {
+      grid-template-columns: 1fr;
+      padding: 80px 20px 40px;
+      gap: 20px;
+      min-height: auto;
+    }
+    .hero-right { margin-top: 0; }
+    .hero-sub { margin-bottom: 24px; }
+    .hero-title { font-size: 58px; }
+    section { padding: 56px 20px; }
+    .marquee-wrap { margin: 0 20px; }
+    .work-grid { grid-template-columns: 1fr; gap: 12px; }
+    .work-card:nth-child(4) { grid-column: span 1; }
+    .services-grid { grid-template-columns: 1fr; gap: 12px; }
+    .process-row { grid-template-columns: 1fr; }
+    .testimonials-grid { grid-template-columns: 1fr; gap: 12px; }
+    footer { flex-direction: column; gap: 16px; text-align: center; margin: 0 16px 24px; }
+    .cta-section { padding: 80px 20px; }
+    .cta-card { padding: 40px 24px; }
+    .hero-stats { gap: 10px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">@CUTBYREHAN</a>
+  <ul class="nav-links">
+    <li><a href="#work">Work</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#contact" class="nav-cta">Let's Talk</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">Video Editor & Motion Designer</div>
+    <h1 class="hero-title">
+      FRAMES<br>
+      THAT<br>
+      <span>SPEAK.</span>
+    </h1>
+    <p class="hero-sub">I cut stories that hold attention. From raw footage to cinematic edits — every second earns its place on screen.</p>
+    <div class="hero-actions">
+      <a href="#work" class="btn-primary">View My Work</a>
+      <a href="#contact" class="btn-ghost">Get in touch →</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="film-strip">
+      <div class="film-cell featured">
+        <span class="film-cell-label">Showreel 2024</span>
+      </div>
+      <div class="film-cell">
+        <span class="film-cell-label">Reels</span>
+      </div>
+      <div class="film-cell">
+        <span class="film-cell-label">Travel</span>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-number">3+</span>
+        <span class="stat-label">Years</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">50+</span>
+        <span class="stat-label">Projects</span>
+      </div>
+      <div class="stat">
+        <span class="stat-number">20+</span>
+        <span class="stat-label">Clients</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="marquee-item"><span class="marquee-dot"></span>Short Form Edits</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Cinematic Reels</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Color Grading</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Motion Graphics</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>YouTube Content</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Travel Edits</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Brand Videos</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Social Media Content</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Short Form Edits</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Cinematic Reels</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Color Grading</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Motion Graphics</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>YouTube Content</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Travel Edits</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Brand Videos</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Social Media Content</span>
+  </div>
+</div>
+
+<!-- WORK -->
+<section id="work">
+  <div class="section-eyebrow">Selected Work</div>
+  <h2 class="section-title">THE REEL</h2>
+  <div class="work-grid">
+    <div class="work-card">
+      <div class="work-card-play">▶</div>
+      <div class="work-card-info">
+        <div class="work-tag">Travel Edit</div>
+        <div class="work-name">Kashmir Cinematic</div>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-play">▶</div>
+      <div class="work-card-info">
+        <div class="work-tag">Brand Video</div>
+        <div class="work-name">Product Launch Reel</div>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-play">▶</div>
+      <div class="work-card-info">
+        <div class="work-tag">Social Media</div>
+        <div class="work-name">Instagram Reels Pack</div>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-play">▶</div>
+      <div class="work-card-info">
+        <div class="work-tag">YouTube</div>
+        <div class="work-name">Vlog Series — 12 Episodes</div>
+      </div>
+    </div>
+    <div class="work-card">
+      <div class="work-card-play">▶</div>
+      <div class="work-card-info">
+        <div class="work-tag">Color Grade</div>
+        <div class="work-name">Cinematic LUT Series</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-eyebrow">What I Do</div>
+  <h2 class="section-title">SERVICES</h2>
+  <div class="services-grid">
+    <div class="service-item">
+      <div class="service-num">01</div>
+      <div class="service-name">SHORT FORM</div>
+      <p class="service-desc">Instagram Reels, YouTube Shorts, TikTok — fast-paced, scroll-stopping edits that hold attention from the first frame.</p>
+    </div>
+    <div class="service-item">
+      <div class="service-num">02</div>
+      <div class="service-name">CINEMATIC</div>
+      <p class="service-desc">Travel films, documentary-style videos, brand stories. Paced for emotion. Graded for atmosphere.</p>
+    </div>
+    <div class="service-item">
+      <div class="service-num">03</div>
+      <div class="service-name">MOTION & COLOR</div>
+      <p class="service-desc">Titles, transitions, color grading — the finishing layer that makes a video feel professional and intentional.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="section-eyebrow">How I Work</div>
+  <h2 class="section-title">PROCESS</h2>
+  <div class="process-row">
+    <div class="process-steps">
+      <div class="process-step">
+        <span class="process-step-num">01 —</span>
+        <span class="process-step-name">Brief & Vision</span>
+      </div>
+      <div class="process-step">
+        <span class="process-step-num">02 —</span>
+        <span class="process-step-name">Footage Review</span>
+      </div>
+      <div class="process-step">
+        <span class="process-step-num">03 —</span>
+        <span class="process-step-name">First Cut</span>
+      </div>
+      <div class="process-step">
+        <span class="process-step-num">04 —</span>
+        <span class="process-step-name">Color & Sound</span>
+      </div>
+      <div class="process-step">
+        <span class="process-step-num">05 —</span>
+        <span class="process-step-name">Final Delivery</span>
+      </div>
+    </div>
+    <div class="process-visual">
+      <div class="timeline-visual">
+        <div class="timeline-label">Brief</div>
+        <div class="timeline-bar"><div class="timeline-fill" style="width:100%"></div></div>
+        <div class="timeline-label">Rough Cut</div>
+        <div class="timeline-bar"><div class="timeline-fill" style="width:80%"></div></div>
+        <div class="timeline-label">Color Grade</div>
+        <div class="timeline-bar"><div class="timeline-fill" style="width:60%"></div></div>
+        <div class="timeline-label">Sound Mix</div>
+        <div class="timeline-bar"><div class="timeline-fill" style="width:45%"></div></div>
+        <div class="timeline-label">Export</div>
+        <div class="timeline-bar"><div class="timeline-fill" style="width:25%"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="section-eyebrow">Client Words</div>
+  <h2 class="section-title">FEEDBACK</h2>
+  <div class="testimonials-grid">
+    <div class="testimonial">
+      <p class="testimonial-text">"The edit was exactly what we imagined but couldn't articulate. Fast delivery, great communication, zero revisions needed."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">AK</div>
+        <div>
+          <div class="author-name">Aryan K.</div>
+          <div class="author-role">Brand Founder</div>
+        </div>
+      </div>
+    </div>
+    <div class="testimonial">
+      <p class="testimonial-text">"Our travel reel got 10x more engagement than our usual content. The pacing and music sync was just perfect."</p>
+      <div class="testimonial-author">
+        <div class="author-avatar">SM</div>
+        <div>
+          <div class="author-name">Sneha M.</div>
+          <div class="author-role">Travel Creator</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="contact" class="cta-section">
+  <div class="cta-card glass">
+    <h2 class="cta-title">
+      GOT A<br>
+      <span>PROJECT?</span>
+    </h2>
+    <p class="cta-sub">Let's turn your footage into something worth watching.</p>
+    <a href="mailto:rehan@example.com" class="btn-primary" style="font-size:15px; padding:15px 40px;">Start a Conversation →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">@CUTBYREHAN</div>
+  <ul class="footer-links">
+    <li><a href="#">Instagram</a></li>
+    <li><a href="#">YouTube</a></li>
+    <li><a href="#">Behance</a></li>
+  </ul>
+  <div class="footer-copy">© 2025 @CUTBYREHAN. All rights reserved.</div>
+</footer>
+
+</body>
+</html>
